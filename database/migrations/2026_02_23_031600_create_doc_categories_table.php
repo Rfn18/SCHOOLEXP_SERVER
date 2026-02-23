@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('doc_categories', function (Blueprint $table) {
             $table->id();
+            $table->string('slug')->unique();
             $table->string('name');
             $table->timestamps();
         });
