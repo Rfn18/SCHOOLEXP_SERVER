@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('location');
             $table->string('poster');
             $table->date('date');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->string('link')->nullable();
             $table->string('status')->default('upcoming');
             $table->boolean('is_all_day')->default(false);
             $table->foreignId('user_id')

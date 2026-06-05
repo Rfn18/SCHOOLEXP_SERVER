@@ -16,9 +16,12 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['user', 'panitia_event', 'admin'])->default('user');
+            $table->string('role')->default('user'); 
+            $table->softDeletes();
+            $table->boolean('is_active')->default(true);
+            $table->string('refresh_token')->nullable();
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamp('token_invalidated_at')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

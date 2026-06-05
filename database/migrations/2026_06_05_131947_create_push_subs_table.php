@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('doc_categories', function (Blueprint $table) {
+        Schema::create('push_subs', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique();
-            $table->string('name');
-            $table->string('description');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('endpoint');
+            $table->string('p256dh');
+            $table->string('auth');
+            $table->string('device_info')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('doc_categories');
+        Schema::dropIfExists('push_subs');
     }
 };
