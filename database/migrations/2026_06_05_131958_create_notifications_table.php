@@ -19,7 +19,8 @@ return new class extends Migration
             $table->text('icon');
             $table->text('url');
             $table->boolean('is_read')->default(false);
-            $table->timestamps('sent_at')->useCurrent();
+            $table->dateTime('sent_at')->useCurrent();
+            $table->timestamps();
         });
     }
 

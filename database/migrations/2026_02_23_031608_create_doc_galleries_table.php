@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('documentations', function (Blueprint $table) {
+        Schema::create('doc_galleries', function (Blueprint $table) {
             $table->id();
-            $table->string('file_path');
-            $table->string('alt_text')->nullable();
-            $table->enum('type', ['small', 'medium', 'large']);
-            $table->foreignId('gallery_id')
-                ->constrained('doc_galleries')
+            $table->foreignId('event_id')
+                ->constrained('events')
+                ->onDelete('cascade');
+            $table->foreignId('doc_category_id')
+                ->constrained('doc_categories')
                 ->onDelete('cascade');
             $table->integer('soft_order')->default(0);
             $table->timestamps();
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('documentations');
+        Schema::dropIfExists('doc_galleries');
     }
 };

@@ -17,12 +17,12 @@ return new class extends Migration
             $table->string('title');
             $table->text('description');
             $table->string('location');
-            $table->string('poster');
+            $table->string('cover_image');
             $table->date('date');
             $table->time('start_time');
             $table->time('end_time');
             $table->string('link')->nullable();
-            $table->string('status')->default('upcoming');
+            $table->enum('status', ['upcoming', 'ongoing', 'completed', 'cancelled'])->default('upcoming');
             $table->boolean('is_all_day')->default(false);
             $table->foreignId('user_id')
                 ->constrained('users')
@@ -31,6 +31,7 @@ return new class extends Migration
                 ->constrained('event_categories')
                 ->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

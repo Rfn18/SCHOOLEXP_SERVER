@@ -16,8 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('role')->default('user'); 
-            $table->softDeletes();
+            $table->foreignId('role_id')->constrained('roles')->onDelete('restrict');
             $table->boolean('is_active')->default(true);
             $table->string('refresh_token')->nullable();
             $table->rememberToken();

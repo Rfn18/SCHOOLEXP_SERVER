@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('doc_categories', function (Blueprint $table) {
+        Schema::create('permissions', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique();
             $table->string('name');
-            $table->string('description')->nullable();
+            $table->string('guard_name');
             $table->timestamps();
+            $table->unique(['name', 'guard_name']);
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('doc_categories');
+        Schema::dropIfExists('permissions');
     }
 };
