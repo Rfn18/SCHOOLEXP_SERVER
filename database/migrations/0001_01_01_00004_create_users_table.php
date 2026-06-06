@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('refresh_token')->nullable();
             $table->rememberToken();
             $table->timestamp('token_invalidated_at')->nullable();
+            $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
