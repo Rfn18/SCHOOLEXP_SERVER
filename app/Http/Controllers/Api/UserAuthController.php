@@ -70,7 +70,7 @@ class UserAuthController extends Controller
     }
 
     public function me() {
-        return new ApiResource(true, 'User Data', auth()->user());
+        return new ApiResource(true, 'User Data',auth()->guard('api')->user());
     }
 
     public function refresh() {
@@ -89,7 +89,7 @@ class UserAuthController extends Controller
         $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
 
         if($removeToken) {
-            return new ApiResource(true, 'Logout Berhasil', auth()->user());
+            return new ApiResource(true, 'Logout Berhasil', auth()->guard('api')->user());
         }
     }
 }

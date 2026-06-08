@@ -36,7 +36,6 @@ class EventController extends Controller
             "status" => "sometimes|in:upcoming,ongoing,completed,cancelled",
             "is_repeat" => "boolean",
             "link" => "nullable|url",
-            "user_id" => "required|exists:users,id",
             "event_category_id" => "required|exists:event_categories,id"
         ]);
 
@@ -65,7 +64,7 @@ class EventController extends Controller
             "status" => $request->status ?? 'upcoming',
             "is_repeat" => $request->is_repeat ?? false,
             "link" => $request->link,
-            "user_id" => $request->user_id,
+            "user_id" => auth()->guard("api")->user()->id,
             "event_category_id" => $request->event_category_id
         ]);
 
@@ -102,9 +101,7 @@ class EventController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        if (Event::where('title', $request->title)
-            ->where('id', '!=', $id)
-            ->exists()) {
+      if ($request->title && Event::where('title', $request->title)->where('id', '!=', $id)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Title event tidak boleh sama.',

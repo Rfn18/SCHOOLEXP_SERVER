@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DocCategoryController;
+use App\Http\Controllers\Api\DocGalleries;
 use App\Http\Controllers\Api\DocumentationController;
 use App\Http\Controllers\Api\EventCategoryController;
 use App\Http\Controllers\Api\EventController;
@@ -20,9 +21,14 @@ Route::middleware('auth:api')->group(function () {
      Route::apiResource('users', UserManagementController::class);
 });
 
-Route::apiResource('event-category', EventCategoryController::class);
-Route::apiResource('event', EventController::class);
-Route::apiResource('doc-category', DocCategoryController::class);
-Route::apiResource('documentation', DocumentationController::class);
-Route::patch('/documentation/reorder', [DocumentationController::class, 'reorder']);
+Route::patch('/documentations/reorder', [DocumentationController::class, 'reorder']);
 Route::patch('/users/change-profile-picture', [UserManagementController::class, 'changeProfilePicture']);
+Route::patch('/doc-galleries/reorder', [DocGalleries::class, 'reorder']);
+Route::get('/event-categories', [EventCategoryController::class, 'index']);
+Route::get('/doc-categories', [DocCategoryController::class, 'index']);
+
+Route::apiResource('doc-galleries', DocGalleries::class);
+Route::apiResource('event-category', EventCategoryController::class);
+Route::apiResource('events', EventController::class);
+Route::apiResource('doc-category', DocCategoryController::class);
+Route::apiResource('documentations', DocumentationController::class);

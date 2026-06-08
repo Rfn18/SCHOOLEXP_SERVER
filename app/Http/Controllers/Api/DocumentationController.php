@@ -13,8 +13,8 @@ class DocumentationController extends Controller
 {
     public function index(): JsonResponse
     {
-        $documentation = Documentation::with('galery')
-                        ->when(request('gallery_id'), fn($q, $id) => $q->where('gallery_id', 'id'))
+        $documentation = Documentation::with('gallery')
+                        ->when(request('gallery_id'), fn($q, $id) => $q->where('gallery_id', $id))
                         ->orderBy('soft_order')
                         ->get()
                         ->map(fn($doc) => [
@@ -63,10 +63,11 @@ class DocumentationController extends Controller
         $publicId = $documentation->file_path;
         
         if ($request->hasFile('image')) {
-            $publicId = $this->cloudinary->replace(
-                $documentation->file_path,
-                $request->file('image'),
-                $request->type
+             Storage::disk('cloudinary')->delete($documentation->file_path);
+        
+            $publicId = Storage::disk('cloudinary')->put(
+                'documentations',
+                $request->file('image')
             );
         }
 

@@ -68,7 +68,7 @@ class EventCategoryController extends Controller
             return response()->json($validator->errors(), 422);
         }
         
-        if (EventCategories::where('name', $request->name)->where('id', '!=', $id)->exists()) {
+        if ($request->name && EventCategories::where('name', $request->name)->where('id', '!=', $id)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Nama jenis tidak boleh sama.',

@@ -54,7 +54,7 @@ class UserManagementController extends Controller
 
     public function show($id)
     {
-          $user = User::with('role')->where($id)->first();
+          $user = User::with('role')->findOrFail($id);
 
           return new ApiResource(true, "User found", $user);
     }
@@ -63,7 +63,7 @@ class UserManagementController extends Controller
     {
          $validator = Validator::make($request->all(), [
               'name' => 'required|string',
-              'email' => 'required|email',
+              'email' => 'required|email|unique:users,email,' . $user->id,
               'password' => 'required|string|min:6',
               'role_id' => 'required|exists:roles,id',
               'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',

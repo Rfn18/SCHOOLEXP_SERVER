@@ -39,7 +39,7 @@ class DocGalleries extends Controller
             'soft_order' => 'required|integer|min:0'
         ]);
 
-        if ($validator->errors()) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data gallery gagal diambil.',
