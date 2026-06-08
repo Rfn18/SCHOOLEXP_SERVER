@@ -18,12 +18,13 @@ return new class extends Migration
             $table->text('description');
             $table->string('location');
             $table->string('cover_image');
-            $table->date('date');
+            $table->date('start_date');
+            $table->date('end_date');
             $table->time('start_time');
             $table->time('end_time');
             $table->string('link')->nullable();
             $table->enum('status', ['upcoming', 'ongoing', 'completed', 'cancelled'])->default('upcoming');
-            $table->boolean('is_all_day')->default(false);
+            $table->boolean('is_repeat')->default(false);
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->onDelete('cascade');

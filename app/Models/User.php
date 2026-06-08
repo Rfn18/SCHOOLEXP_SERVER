@@ -23,14 +23,21 @@ class User extends Authenticatable implements JWTSubject
     protected $fillable = [
         'name',
         'email',
-        'is_active',
         'password',
-        'role_id'
+        'role_id',
+        'profile_picture',
+        'is_active',
+        'refresh_token'
     ];
 
     public function role()
     {
         return $this->belongsTo(Roles::class);  
+    }
+
+    public function event()
+    {
+        return $this->hasMany(Event::class, "user_id");
     }
 
     /**

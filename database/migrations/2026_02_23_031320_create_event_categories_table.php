@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('event_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique();
             $table->string('name');
             $table->string('description')->nullable();
             $table->timestamps();

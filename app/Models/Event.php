@@ -17,17 +17,25 @@ class Event extends Model
         'title',
         'description',
         'location',
-        'poster',
-        'date',
+        'cover_image',
+        'start_date',
+        'end_date',
+        'start_time',
+        'end_time',
+        'link',
         'status',
-        'is_all_day',
+        'is_repeat',
         'user_id',
         'event_category_id'
     ];
 
-    protected $casts = [
-        'is_all_day' => 'boolean',
-        'date' => 'date',
+    protected $cast = [
+        'is_repeat' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',   
+        'start_time' => 'time',
+        'end_time' => 'time',
+        'status' => 'enum',
     ];
 
     public function user():BelongsTo
@@ -38,10 +46,5 @@ class Event extends Model
      public function eventCategory():BelongsTo
     {
         return $this->belongsTo(EventCategories::class, "event_category_id");
-    }
-
-    public function documentation(): HasMany
-    {
-        return $this->hasMany(Documentation::class);
     }
 }

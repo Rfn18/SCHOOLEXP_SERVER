@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->foreignId('role_id')->constrained('roles')->onDelete('restrict');
+            $table->string('profile_picture')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('refresh_token')->nullable();
             $table->rememberToken();

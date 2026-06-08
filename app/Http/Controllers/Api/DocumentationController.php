@@ -5,88 +5,109 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApiResource;
 use App\Models\Documentation;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\DocumentationRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentationController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-        $documentations = Documentation::with(['event', 'docCategory'])
-            ->paginate(10);
+        $documentation = Documentation::with('galery')
+                        ->when(request('gallery_id'), fn($q, $id) => $q->where('gallery_id', 'id'))
+                        ->orderBy('soft_order')
+                        ->get()
+                        ->map(fn($doc) => [
+                            ...$doc->toArray(),
+                            'url' => $doc->image_url,
+                        ]);
 
-        if ($documentations->count() === 0) {
-            return new ApiResource(true, "List documentation masih kosong", $documentations);
-        }
-
-        return new ApiResource(true, "List data documentation", $documentations);
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully retrieved documentation',
+            'data' => $documentation
+        ]);
     }
 
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "file_path" => "required|string",
-            "event_id" => "required|exists:events,id",
-            "doc_category_id" => "required|exists:doc_categories,id"
+    public function store(DocumentationRequest $request): JsonResponse
+{
+    $path = Storage::disk('cloudinary')->put(
+        'documentations',
+        $request->file('image')
+    );
+
+    $documentation = Documentation::create([
+        'file_path' => $path,
+        'alt_text' => $request->alt_text,
+        'type' => $request->type,
+        'gallery_id' => $request->gallery_id,
+        'soft_order' => $request->soft_order,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Successfully created documentation',
+        'data' => $documentation
+    ]);
+}
+
+    public function show(Documentation $documentation): JsonResponse {
+       return response()->json([
+            ...$documentation->load('gallery')->toArray(),
+            'url' => $documentation->image_url,
         ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $documentation = Documentation::create([
-            "file_path" => $request->file_path,
-            "event_id" => $request->event_id,
-            "doc_category_id" => $request->doc_category_id
-        ]);
-
-        return new ApiResource(true, "Successfully created documentation", $documentation);
     }
 
-    public function show($id)
+    public function update(DocumentationRequest $request, Documentation $documentation): JsonResponse
     {
-        $documentation = Documentation::with(['event', 'docCategory'])
-            ->findOrFail($id);
-
-        return new ApiResource(true, "Detail documentation berdasarkan id", $documentation);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            "file_path" => "sometimes|string",
-            "event_id" => "sometimes|exists:events,id",
-            "doc_category_id" => "sometimes|exists:doc_categories,id"
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        $publicId = $documentation->file_path;
+        
+        if ($request->hasFile('image')) {
+            $publicId = $this->cloudinary->replace(
+                $documentation->file_path,
+                $request->file('image'),
+                $request->type
+            );
         }
-
-        $documentation = Documentation::findOrFail($id);
 
         $documentation->update([
-            "file_path" => $request->file_path,
-            "event_id" => $request->event_id ?? $documentation->event_id,
-            "doc_category_id" => $request->doc_category_id ?? $documentation->doc_category_id
+            'file_path' => $publicId,
+            'alt_text' => $request->alt_text,
+            'type' => $request->type,
+            'gallery_id' => $request->gallery_id,
+            'soft_order' => $request->soft_order ?? $documentation->soft_order,
         ]);
 
-        return new ApiResource(true, "Successfully updated documentation.", $documentation);
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully updated documentation',
+            'data' => $documentation
+        ]);
     }
 
-    public function destroy($id)
+    public function destroy(Documentation $documentation): JsonResponse
     {
-        $documentation = Documentation::findOrFail($id);
-
-        if ($documentation->file_path &&
-            Storage::disk('public')->exists($documentation->file_path)) {
-
-            Storage::disk('public')->delete($documentation->file_path);
-        }
-
+        Storage::disk('cloudinary')->delete($documentation->file_path);
         $documentation->delete();
 
-        return new ApiResource(true, "Successfully deleted documentation.", $documentation);
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully deleted documentation',
+        ]);
+    }
+
+    public function reorder(): JsonResponse
+    {   
+        $items = request()->validate([
+            '*.id'         => 'required|exists:documentations,id',
+            '*.soft_order' => 'required|integer|min:0',
+        ]);
+
+        foreach ($items as $item) {
+            Documentation::where('id', $item['id'])
+                ->update(['soft_order' => $item['soft_order']]);
+        }
+
+        return response()->json(['message' => 'Urutan berhasil disimpan.']);
     }
 }

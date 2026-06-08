@@ -11,11 +11,11 @@ class DocCategories extends Model
 
     protected $fillable = [
         'name',
-        'slug'
+        'description'
     ];
 
-    public function event(): HasMany {
-        return $this->hasMany(Event::class);
+    public function gallery(): HasMany {
+        return $this->hasMany(DocGalleries::class);
     }
 
 }

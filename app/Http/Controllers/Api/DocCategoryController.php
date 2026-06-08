@@ -24,8 +24,8 @@ class DocCategoryController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "slug" => "required|alpha_dash|unique:doc_categories,slug|max:255",
-            "name" => "required|string|max:255"
+            "name" => "required|string|max:255",
+            "description" => "required|string"
         ]);
 
         if ($validator->fails()) {
@@ -49,8 +49,8 @@ class DocCategoryController extends Controller
         }
 
         $docCategory = DocCategories::create([
-            "slug" => $request->slug,
-            "name" => $request->name
+            "name" => $request->name,
+            "description" => $request->description,
         ]);
 
         return new ApiResource(true, "Successfully created doc category", $docCategory);
@@ -66,8 +66,8 @@ class DocCategoryController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            "slug" => "required|alpha_dash|unique:doc_categories,slug,".$id."|max:255",
-            "name" => "sometimes|string|max:255"
+            "name" => "sometimes|string|max:255",
+            "description" => "sometimes|string"
         ]);
 
         if ($validator->fails()) {
@@ -95,8 +95,8 @@ class DocCategoryController extends Controller
         $docCategory = DocCategories::findOrFail($id);
 
         $docCategory->update([
-            "slug" => $request->slug,
-            "name" => $request->name ?? $docCategory->name
+            "name" => $request->name ?? $docCategory->name,
+            "description" => $request->description ?? $docCategory->description
         ]);
 
         return new ApiResource(true, "Successfully updated doc category.", $docCategory);

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Documentation extends Model
 {
@@ -13,17 +12,24 @@ class Documentation extends Model
 
     protected $fillable = [
         'file_path',
-        'event_id',
-        'doc_category_id'
+        'alt_text',
+        'type',
+        'gallery_id',
+        'soft_order'
     ];
 
-    public function event():BelongsTo
+    protected $cast = [
+        'type' => 'string',
+        'soft_order' => 'integer'
+    ];
+
+    const TYPE = ['small', 'medium', 'large'];
+
+
+    public function gallery()
     {
-        return $this->belongsTo(Event::class);
+        return $this->belongsTo(DocGalleries::class);
     }
 
-    public function docCategory():BelongsTo
-    {
-        return $this->belongsTo(DocCategories::class);
-    }
+    
 }

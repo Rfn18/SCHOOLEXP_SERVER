@@ -22,14 +22,14 @@ class EventCategoryController extends Controller
     public function store(Request $request) {
         $validator = Validator::make($request->all(), [
             "name" => "required|string",
-            "slug" => "required|alpha_dash|unique:event_categories,slug|max:255"
+            "description" => "sometimes|string"
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json($validator->errors(), 422); 
         }
 
-        if (is_numeric($request->nama_jenis)) {
+        if (is_numeric($request->name)) {
            return response()->json([
                 'success' => false,
                 'message' => 'Nama jenis tidak boleh angka.',
@@ -47,11 +47,10 @@ class EventCategoryController extends Controller
         
         $eventcategories = EventCategories::create([
             "name" => $request->name,
-            "slug" => $request->slug
+            "description" => $request->description
         ]);
 
         return new ApiResource(true, "Successfully created jenis", $eventcategories);
-
     }
 
     public function show($id) {
@@ -62,7 +61,7 @@ class EventCategoryController extends Controller
     public function update(Request $request, $id) { 
         $validator = Validator::make($request->all(), [
             "name" => "sometimes|string",
-            "slug" => "required|alpha_dash|unique:event_categories,slug|max:255"
+            "description" => "nullable|string"
         ]);
 
         if ($validator->fails()) {
@@ -90,7 +89,7 @@ class EventCategoryController extends Controller
         $eventcategories->update([
             "id" => $eventcategories->id,
             "name" => $request->name,
-            "slug" => $request->slug
+            "description" => $request->description
         ]);
 
      return new ApiResource(true, "Successfully updated data.", $eventcategories);
