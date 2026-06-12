@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ApiResource;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
@@ -30,7 +31,7 @@ class EventController extends Controller
             "location" => "required|string|max:255",
             "cover_image" => "required|image|mimes:jpeg,png,jpg,gif,svg|max:2048",
             "start_date" => "required|date",
-            "end_date" => "required|date",  
+            "end_date" => "required|date",
             "start_time" => "required|date",
             "end_time" => "required|date",
             "status" => "sometimes|in:upcoming,ongoing,completed,cancelled",
@@ -49,6 +50,33 @@ class EventController extends Controller
                 'message' => 'Title event tidak boleh sama.',
                 'data' => null
             ], 422);
+        }
+
+        if ($request->cover_image) {
+            $coverImagePath = $request->file('cover_image')->store('cloudinary/events', 'cloudinary');
+            $request->merge(['cover_image' => $coverImagePath]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cover image is required.',
+                'data' => null
+            ], 422);
+        }
+
+        if (!$request->status) {
+            $request->merge(['status' => 'upcoming']);
+        }
+
+        if (!$request->is_repeat) {
+            $request->merge(['is_repeat' => false]);
+        }
+
+        if (!$request->link) {
+            $request->merge(['link' => null]);
+        }
+
+        if (!$request->user_id) {
+            $request->merge(['user_id' => auth()->guard("api")->user()->id]);
         }
 
         $event = Event::create([
@@ -111,6 +139,15 @@ class EventController extends Controller
 
         $event = Event::findOrFail($id);
 
+        if ($request->cover_image) {
+            $coverImagePath = $request->file('cover_image')->store('cloudinary/events', 'cloudinary');
+            $request->merge(['cover_image' => $coverImagePath]);
+        }
+
+        if ($event->cover_image && $request->cover_image) {
+            Storage::disk('cloudinary')->delete($event->cover_image);
+        }
+
         $event->update([
             "slug" => $request->slug,
             "title" => $request->title ?? $event->title,
@@ -138,4 +175,82 @@ class EventController extends Controller
 
         return new ApiResource(true, "Successfully deleted event.", $event);
     }
+
+    public function search(Request $request)
+    {
+        $query = Event::query();
+
+        if ($request->has('title')) {
+            $query->where('title', 'like', '%' . $request->title . '%');
+        }
+
+        if ($request->has('location')) {
+            $query->where('location', 'like', '%' . $request->location . '%');
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('event_category_id')) {
+            $query->where('event_category_id', $request->event_category_id);
+
+        }
+
+        return new ApiResource(true, "Events found.", $query->get());
+    }
+
+    public function filterByDate(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $events = Event::whereBetween('start_date', [$request->start_date, $request->end_date])->get();
+
+        return new ApiResource(true, "Events found between specified dates.", $events);
+    }
+
+    public function filterByCategory($categoryId)
+    {
+        $events = Event::where('event_category_id', $categoryId)->get();
+
+        if ($events->isEmpty()) {
+            return new ApiResource(true, "No events found for this category.", $events);
+        }
+
+        return new ApiResource(true, "Events found for the specified category.", $events);
+    }
+
+    public function filterByStatus($status)
+    {
+        $events = Event::where('status', $status)->get();
+
+        if ($events->isEmpty()) {
+            return new ApiResource(true, "No events found with this status.", $events);
+        }
+
+        return new ApiResource(true, "Events found with the specified status.", $events);
+    }
+
+    public function filterByUser($userId)
+    {
+        $events = Event::where('user_id', $userId)->get();
+
+        if ($events->isEmpty()) {
+            return new ApiResource(true, "No events found for this user.", $events);
+        }
+
+        return new ApiResource(true, "Events found for the specified user.", $events);
+    }
+
 }
