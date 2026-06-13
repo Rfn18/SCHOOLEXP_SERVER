@@ -36,7 +36,7 @@ class UserAuthController extends Controller
         'password' => Hash::make($request->password),
     ]);
 
-    return response()->json([   
+    return response()->json([
         'message' => 'User created successfully',
         'user' => $user
     ], 201);
@@ -74,7 +74,7 @@ class UserAuthController extends Controller
     }
 
     public function refresh() {
-        return $this->respondWithToken(auth()->guard('api')->refresh()); 
+        return $this->respondWithToken(auth()->guard('api')->refresh());
     }
 
     protected function respondWithToken($token) {
@@ -92,4 +92,5 @@ class UserAuthController extends Controller
             return new ApiResource(true, 'Logout Berhasil', auth()->guard('api')->user());
         }
     }
+    
 }

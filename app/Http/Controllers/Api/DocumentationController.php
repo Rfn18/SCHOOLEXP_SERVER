@@ -65,10 +65,10 @@ class DocumentationController extends Controller
     public function update(DocumentationRequest $request, Documentation $documentation): JsonResponse
     {
         $publicId = $documentation->file_path;
-        
+
         if ($request->hasFile('image')) {
              Storage::disk('cloudinary')->delete($documentation->file_path);
-        
+
             $publicId = Storage::disk('cloudinary')->put(
                 'documentations',
                 $request->file('image')
@@ -101,8 +101,13 @@ class DocumentationController extends Controller
         ]);
     }
 
+<<<<<<< HEAD
     public function reorder(): JsonResponse 
     {   
+=======
+    public function reorder(): JsonResponse
+    {
+>>>>>>> e585848ddafd8f7bc8c0de14fb3c106ce819db77
         $items = request()->validate([
             '*.id'         => 'required|exists:documentations,id',
             '*.soft_order' => 'required|integer|min:0',
@@ -115,4 +120,87 @@ class DocumentationController extends Controller
 
         return response()->json(['message' => 'Urutan berhasil disimpan.']);
     }
+
+    public function bulkDelete(): JsonResponse
+    {
+        $ids = request()->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:documentations,id',
+        ])['ids'];
+
+        $documentations = Documentation::whereIn('id', $ids)->get();
+
+        foreach ($documentations as $documentation) {
+            Storage::disk('cloudinary')->delete($documentation->file_path);
+            $documentation->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully deleted documentations',
+        ]);
+    }
+
+    public function bulkUpdate(DocumentationRequest $request): JsonResponse
+    {
+        $items = $request->validate([
+            '*.id' => 'required|exists:documentations,id',
+            '*.alt_text' => 'required|string',
+            '*.type' => 'required|string',
+            '*.gallery_id' => 'required|exists:galleries,id',
+            '*.soft_order' => 'required|integer|min:0',
+        ]);
+
+        foreach ($items as $item) {
+            Documentation::where('id', $item['id'])
+                ->update([
+                    'alt_text' => $item['alt_text'],
+                    'type' => $item['type'],
+                    'gallery_id' => $item['gallery_id'],
+                    'soft_order' => $item['soft_order'],
+                ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully updated documentations',
+        ]);
+    }
+
+    public function bulkCreate(DocumentationRequest $request): JsonResponse
+    {
+        $items = $request->validate([
+            '*.alt_text' => 'required|string',
+            '*.type' => 'required|string',
+            '*.gallery_id' => 'required|exists:galleries,id',
+            '*.soft_order' => 'required|integer|min:0',
+            '*.image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        $createdDocumentations = [];
+
+        foreach ($items as $item) {
+            $path = Storage::disk('cloudinary')->put(
+                'documentations',
+                $item['image']
+            );
+
+            $documentation = Documentation::create([
+                'file_path' => $path,
+                'alt_text' => $item['alt_text'],
+                'type' => $item['type'],
+                'gallery_id' => $item['gallery_id'],
+                'soft_order' => $item['soft_order'],
+            ]);
+
+            $createdDocumentations[] = $documentation;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully created documentations',
+            'data' => $createdDocumentations
+        ]);
+    }
+
 }
