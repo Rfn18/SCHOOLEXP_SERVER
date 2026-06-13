@@ -369,21 +369,48 @@
 
         async function apiRequest(endpoint, options = {}) {
             const url = API_BASE() + endpoint;
+
+            // 🚨 PERBAIKAN: Header 'Accept' WAJIB selalu dikirim agar Laravel tahu ini request API
             const headers = {
+                'Accept': 'application/json',
                 ...(options.headers || {})
             };
-            if (AUTH_TOKEN()) headers['Authorization'] = `Bearer ${AUTH_TOKEN()}`;
+
+            if (AUTH_TOKEN()) {
+                headers['Authorization'] = `Bearer ${AUTH_TOKEN()}`;
+            }
+
+            // Jangan set Content-Type jika menggunakan FormData (biarkan browser yang handle multipart/form-data)
             if (!(options.body instanceof FormData)) {
                 headers['Content-Type'] = 'application/json';
-                headers['Accept'] = 'application/json';
             }
+
             try {
                 const response = await fetch(url, {
                     ...options,
                     headers
                 });
-                const data = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
+
+                // Parse response (berhati-hati jika response kosong)
+                let data = {};
+                const text = await response.text();
+                try {
+                    data = text ? JSON.parse(text) : {};
+                } catch (e) {
+                    data = {
+                        message: text || 'Invalid JSON response'
+                    };
+                }
+
+                if (!response.ok) {
+                    // Jika 422 (Validation Error), tampilkan detail field yang salah
+                    if (response.status === 422 && data.errors) {
+                        const errorMessages = Object.values(data.errors).flat().join('\n');
+                        throw new Error(`Validation Error:\n${errorMessages}`);
+                    }
+                    throw new Error(data.message || `HTTP ${response.status}`);
+                }
+
                 return data;
             } catch (err) {
                 showToast(err.message, 'error');
@@ -573,8 +600,9 @@
                 if (filterEventId) url += `?event_id=${filterEventId}`;
                 const res = await apiRequest(url);
                 const galleries = res.data.data;
+                console.log(galleries)
                 list.innerHTML = '';
-                if (Array.isArray(galleries) && galleries.length === 0) {
+                if (galleries && galleries.length === 0) {
                     list.innerHTML = '<div class="text-center text-muted p-3">Belum ada gallery</div>';
                     return;
                 }
@@ -583,11 +611,11 @@
                     item.className = 'list-group-item d-flex justify-content-between align-items-center';
                     item.innerHTML = `
                 <div>
-                    <strong>${g.title || g.name || 'Untitled'}</strong>
+                    <strong>${ g.doc_category.name || 'Untitled'}</strong>
                     <br><small class="text-muted">Event ID: ${g.event_id} | Gallery ID: ${g.id}</small>
                 </div>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary" onclick="selectGalleryForDocs(${g.id}, '${(g.title || g.name).replace(/'/g, "\\'")}')">
+                    <button class="btn btn-sm btn-outline-primary" onclick="selectGalleryForDocs(${g.id}, '${(g.doc_category.name)}')>
                         <i class="bi bi-eye"></i> View
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteGallery(${g.id})">
@@ -657,7 +685,7 @@
                 select.innerHTML = defaultOpt;
                 galleries.forEach(g => {
                     select.innerHTML +=
-                        `<option value="${g.id}">${g.title || g.name} (ID: ${g.id})</option>`;
+                        `<option value="${g.id}">${g.doc_category.name} (ID: ${g.id})</option>`;
                 });
             });
             docSelect.value = currentDocVal;
@@ -674,6 +702,7 @@
         document.getElementById('docForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            console.log(formData)
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
@@ -711,7 +740,8 @@
             list.innerHTML = '<div class="text-center w-100"><div class="spinner-border"></div></div>';
             try {
                 const res = await apiRequest(`/documentations?gallery_id=${galleryId}`);
-                const docs = res.data || res;
+                const docs = res.data;
+                console.log(docs)
                 list.innerHTML = '';
                 if (Array.isArray(docs) && docs.length === 0) {
                     list.innerHTML = '<div class="text-center text-muted w-100">Belum ada foto di gallery ini</div>';

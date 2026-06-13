@@ -6,11 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ApiResource;
 use App\Models\Documentation;
 use App\Http\Requests\DocumentationRequest;
+use App\Services\CloudinaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentationController extends Controller
 {
+    protected $cloudinaryService;
+
+    public function __construct(CloudinaryService $cloudinaryService) 
+    {
+        $this->cloudinaryService = $cloudinaryService;
+    }
     public function index(): JsonResponse
     {
         $documentation = Documentation::with('gallery')
@@ -30,26 +37,23 @@ class DocumentationController extends Controller
     }
 
     public function store(DocumentationRequest $request): JsonResponse
-{
-    $path = Storage::disk('cloudinary')->put(
-        'documentations',
-        $request->file('image')
-    );
+    {
+        $path = $this->cloudinaryService->upload($request->file('image'));
 
-    $documentation = Documentation::create([
-        'file_path' => $path,
-        'alt_text' => $request->alt_text,
-        'type' => $request->type,
-        'gallery_id' => $request->gallery_id,
-        'soft_order' => $request->soft_order,
-    ]);
+        $documentation = Documentation::create([
+            'file_path' => $path,
+            'alt_text' => $request->alt_text,
+            'type' => $request->type,
+            'gallery_id' => $request->gallery_id,
+            'soft_order' => $request->soft_order,
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Successfully created documentation',
-        'data' => $documentation
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully created documentation',
+            'data' => $documentation
+        ]);
+    }
 
     public function show(Documentation $documentation): JsonResponse {
        return response()->json([
@@ -88,7 +92,7 @@ class DocumentationController extends Controller
 
     public function destroy(Documentation $documentation): JsonResponse
     {
-        Storage::disk('cloudinary')->delete($documentation->file_path);
+        $this->cloudinaryService->delete($documentation->file_path);
         $documentation->delete();
 
         return response()->json([
@@ -97,7 +101,7 @@ class DocumentationController extends Controller
         ]);
     }
 
-    public function reorder(): JsonResponse
+    public function reorder(): JsonResponse 
     {   
         $items = request()->validate([
             '*.id'         => 'required|exists:documentations,id',
