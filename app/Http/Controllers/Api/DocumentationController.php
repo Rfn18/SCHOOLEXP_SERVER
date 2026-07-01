@@ -101,13 +101,8 @@ class DocumentationController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
     public function reorder(): JsonResponse 
     {   
-=======
-    public function reorder(): JsonResponse
-    {
->>>>>>> e585848ddafd8f7bc8c0de14fb3c106ce819db77
         $items = request()->validate([
             '*.id'         => 'required|exists:documentations,id',
             '*.soft_order' => 'required|integer|min:0',
