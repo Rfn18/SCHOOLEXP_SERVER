@@ -19,7 +19,7 @@ class EventController extends Controller
 
     public function index()
     {
-        $events = Event::with(['user', 'eventCategory'])->paginate(10);
+        $events = Event::with(['user', 'category'])->paginate(10);
 
         if ($events->count() === 0) {
             return new ApiResource(true, "List event masih kosong", $events);
@@ -91,7 +91,7 @@ class EventController extends Controller
     }
     public function show($id)
     {
-        $event = Event::with(['user', 'eventCategory'])->findOrFail($id);
+        $event = Event::with(['user', 'category'])->findOrFail($id);
 
         return new ApiResource(true, "Detail event berdasarkan id", $event);
     }

@@ -19,13 +19,13 @@ Route::middleware('auth:api')->group(function () {
      Route::post('/refresh', [UserAuthController::class, 'refresh']);
      Route::delete('/logout', [UserAuthController::class, 'logout']);
      Route::apiResource('users', UserManagementController::class);
+     
+     Route::patch('/documentations/reorder', [DocumentationController::class, 'reorder']);
+     Route::patch('/users/change-profile-picture', [UserManagementController::class, 'changeProfilePicture']);
+     Route::patch('/doc-galleries/reorder', [DocGalleries::class, 'reorder']);
+     Route::get('/event-categories', [EventCategoryController::class, 'index']);
+     Route::get('/doc-categories', [DocCategoryController::class, 'index']);
 });
-
-Route::patch('/documentations/reorder', [DocumentationController::class, 'reorder']);
-Route::patch('/users/change-profile-picture', [UserManagementController::class, 'changeProfilePicture']);
-Route::patch('/doc-galleries/reorder', [DocGalleries::class, 'reorder']);
-Route::get('/event-categories', [EventCategoryController::class, 'index']);
-Route::get('/doc-categories', [DocCategoryController::class, 'index']);
 
 Route::apiResource('doc-galleries', DocGalleries::class);
 Route::apiResource('event-category', EventCategoryController::class);

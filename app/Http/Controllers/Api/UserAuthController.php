@@ -61,8 +61,10 @@ class UserAuthController extends Controller
             ], 401);
         }
 
+        $user = auth()->guard('api')->user()->load('role');
+
         return new ApiResource(true, 'Login Berhasil', [
-            'user' => auth()->guard('api')->user(),
+            'user' => $user,
             'token' => $token,
             'token_type' => 'Bearer',
             'expires_in' => auth()->guard('api')->factory()->getTTL() * 60
@@ -70,7 +72,8 @@ class UserAuthController extends Controller
     }
 
     public function me() {
-        return new ApiResource(true, 'User Data',auth()->guard('api')->user());
+        $user = auth()->guard('api')->user()->load('role');
+        return new ApiResource(true, 'User Data', $user);
     }
 
     public function refresh() {

@@ -43,7 +43,7 @@ class Event extends Model
         return $this->belongsTo(User::class);
     }
 
-     public function eventCategory():BelongsTo
+     public function category():BelongsTo
     {
         return $this->belongsTo(EventCategories::class, "event_category_id");
     }
