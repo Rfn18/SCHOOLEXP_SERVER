@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApiResource;
 use App\Models\Event;
+use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
+     public function __construct(
+        protected CloudinaryService $cloudinaryService
+    ) {}
+
     public function index()
     {
         $events = Event::with(['user', 'eventCategory'])->paginate(10);
@@ -26,79 +32,63 @@ class EventController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "slug" => "required|alpha_dash|unique:events,slug|max:255",
-            "title" => "required|string|max:255",
+            "title" => "required|string|max:255|unique:events,title",
             "description" => "required|string",
             "location" => "required|string|max:255",
-            "cover_image" => "required|image|mimes:jpeg,png,jpg,gif,svg|max:2048",
+            "cover_image" => "required|image|mimes:jpeg,png,jpg,gif|max:5128", // svg dihapus
             "start_date" => "required|date",
-            "end_date" => "required|date",
-            "start_time" => "required|date",
-            "end_time" => "required|date",
+            "end_date" => "required|date|after_or_equal:start_date",
+            "start_time" => "required|date_format:H:i",
+            "end_time" => "required|date_format:H:i|after:start_time",
             "status" => "sometimes|in:upcoming,ongoing,completed,cancelled",
-            "is_repeat" => "boolean",
+            "is_repeat" => "sometimes|boolean",
             "link" => "nullable|url",
-            "event_category_id" => "required|exists:event_categories,id"
+            "event_category_id" => "required|exists:event_categories,id",
+        ], [
+            'title.unique' => 'Title event tidak boleh sama.',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        if (Event::where('title', $request->title)->exists()) {
+        DB::beginTransaction();
+        try {
+            $coverImagePath = $request->file('cover_image')->store('school-exp/events', 'cloudinary');
+
+            $event = Event::create([
+                "slug" => $request->slug,
+                "title" => $request->title,
+                "description" => $request->description,
+                "location" => $request->location,
+                "cover_image" => $coverImagePath,
+                "start_date" => $request->start_date,
+                "end_date" => $request->end_date,
+                "start_time" => $request->start_time,
+                "end_time" => $request->end_time,
+                "status" => $request->status ?? 'upcoming',
+                "is_repeat" => $request->boolean('is_repeat'),
+                "link" => $request->link,
+                "user_id" => auth()->guard("api")->id(),
+                "event_category_id" => $request->event_category_id,
+            ]);
+
+            DB::commit();
+            return new ApiResource(true, "Successfully created event", $event);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            if (isset($coverImagePath)) {
+                Storage::disk('cloudinary')->delete($coverImagePath);
+            }
             return response()->json([
                 'success' => false,
-                'message' => 'Title event tidak boleh sama.',
-                'data' => null
-            ], 422);
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'data' => null,
+            ], 500);
         }
-
-        if ($request->cover_image) {
-            $coverImagePath = $request->file('cover_image')->store('cloudinary/events', 'cloudinary');
-            $request->merge(['cover_image' => $coverImagePath]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cover image is required.',
-                'data' => null
-            ], 422);
-        }
-
-        if (!$request->status) {
-            $request->merge(['status' => 'upcoming']);
-        }
-
-        if (!$request->is_repeat) {
-            $request->merge(['is_repeat' => false]);
-        }
-
-        if (!$request->link) {
-            $request->merge(['link' => null]);
-        }
-
-        if (!$request->user_id) {
-            $request->merge(['user_id' => auth()->guard("api")->user()->id]);
-        }
-
-        $event = Event::create([
-            "slug" => $request->slug,
-            "title" => $request->title,
-            "description" => $request->description,
-            "location" => $request->location,
-            "cover_image" => $request->cover_image,
-            "start_date" => $request->start_date,
-            "end_date" => $request->end_date,
-            "start_time" => $request->start_time,
-            "end_time" => $request->end_time,
-            "status" => $request->status ?? 'upcoming',
-            "is_repeat" => $request->is_repeat ?? false,
-            "link" => $request->link,
-            "user_id" => auth()->guard("api")->user()->id,
-            "event_category_id" => $request->event_category_id
-        ]);
-
-        return new ApiResource(true, "Successfully created event", $event);
     }
-
     public function show($id)
     {
         $event = Event::with(['user', 'eventCategory'])->findOrFail($id);

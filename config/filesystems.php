@@ -60,18 +60,14 @@ return [
             'report' => false,
         ],
         'cloudinary' => [
-            'driver' => 'cloudinary',
-
-            'cloud' => [
-                'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
-                'api_key' => env('CLOUDINARY_API_KEY'),
-                'api_secret' => env('CLOUDINARY_API_SECRET'),
-            ],
-
-            'notifications' => [
-                'webhook_url' => env('CLOUDINARY_NOTIFICATION_URL', ''),
-            ],
-        ],
+        'driver' => 'cloudinary',
+        'key' => env('CLOUDINARY_API_KEY'),
+        'secret' => env('CLOUDINARY_API_SECRET'),
+        'cloud' => env('CLOUDINARY_CLOUD_NAME'),
+        'url' => env('CLOUDINARY_URL'),
+        'secure' => (bool) env('CLOUDINARY_SECURE', true),
+        'prefix' => env('CLOUDINARY_PREFIX'),
+    ],
     ],
 
     /*
