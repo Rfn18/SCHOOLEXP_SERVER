@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('file_path');
             $table->string('alt_text')->nullable();
-            $table->enum('type', ['small', 'medium', 'large']);
+            $table->unsignedInteger('width')->nullable();;
+            $table->unsignedInteger('height')->nullable();;
             $table->foreignId('gallery_id')
                 ->constrained('doc_galleries')
                 ->onDelete('cascade');

@@ -14,10 +14,18 @@ class DocGalleries extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        $doc_gallery = ModelsDocGalleries::with('docCategory')->paginate(10);
-        return new ApiResource(true, 'Data gallery berhasil diambil.', $doc_gallery);
+        $galleries = ModelsDocGalleries::with(['docCategory', 'documentations'])
+            ->when(request('event_id'), fn($q, $id) => $q->where('event_id', $id))
+            ->orderBy('soft_order')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully retrieved galleries',
+            'data' => $galleries,
+        ]);
     }
 
     /**

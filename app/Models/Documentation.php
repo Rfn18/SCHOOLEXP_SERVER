@@ -13,18 +13,17 @@ class Documentation extends Model
     protected $fillable = [
         'file_path',
         'alt_text',
-        'type',
+        'width',
+        'height',
         'gallery_id',
         'soft_order'
     ];
 
     protected $cast = [
-        'type' => 'string',
-        'soft_order' => 'integer'
+        'soft_order' => 'integer',
+        'width' => 'integer',
+        'height' => 'integer',
     ];
-
-    const TYPE = ['small', 'medium', 'large'];
-
 
     public function gallery()
     {

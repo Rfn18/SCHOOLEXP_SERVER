@@ -35,7 +35,7 @@ class EventController extends Controller
             "title" => "required|string|max:255|unique:events,title",
             "description" => "required|string",
             "location" => "required|string|max:255",
-            "cover_image" => "required|image|mimes:jpeg,png,jpg,gif|max:5128", // svg dihapus
+            "cover_image" => "required|image|mimes:jpeg,png,jpg,gif|max:5128", 
             "start_date" => "required|date",
             "end_date" => "required|date|after_or_equal:start_date",
             "start_time" => "required|date_format:H:i",
@@ -89,25 +89,27 @@ class EventController extends Controller
             ], 500);
         }
     }
-    public function show($id)
+    public function show($slug)
     {
-        $event = Event::with(['user', 'category'])->findOrFail($id);
+        $event = Event::with(['user', 'category'])->where('slug', $slug)->firstOrFail();
 
-        return new ApiResource(true, "Detail event berdasarkan id", $event);
+        return new ApiResource(true, "Detail event berdasarkan slug", $event);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
+        $event = Event::where('slug', $slug)->firstOrFail();
+
         $validator = Validator::make($request->all(), [
-            "slug" => "required|alpha_dash|unique:events,slug,".$id."|max:255",
+            "slug" => "sometimes|alpha_dash|unique:events,slug,".$event->id."|max:255",
             "title" => "sometimes|string|max:255",
             "description" => "sometimes|string",
             "location" => "sometimes|string|max:255",
             "cover_image" => "sometimes|string",
             "start_date" => "sometimes|date",
             "end_date" => "sometimes|date",
-            "start_time" => "sometimes|date",
-            "end_time" => "sometimes|date",
+            "start_time" => "sometimes|date_format:H:i",
+            "end_time" => "sometimes|date_format:H:i|after:start_time",
             "status" => "sometimes|in:upcoming,ongoing,completed,cancelled",
             "is_repeat" => "boolean",
             "link" => "nullable|url",
@@ -119,15 +121,13 @@ class EventController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-      if ($request->title && Event::where('title', $request->title)->where('id', '!=', $id)->exists()) {
+        if ($request->title && Event::where('title', $request->title)->where('id', '!=', $event->id)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Title event tidak boleh sama.',
                 'data' => null
             ], 422);
         }
-
-        $event = Event::findOrFail($id);
 
         if ($request->cover_image) {
             $coverImagePath = $request->file('cover_image')->store('cloudinary/events', 'cloudinary');
@@ -139,7 +139,7 @@ class EventController extends Controller
         }
 
         $event->update([
-            "slug" => $request->slug,
+            "slug" => $request->slug ?? $event->slug,
             "title" => $request->title ?? $event->title,
             "description" => $request->description ?? $event->description,
             "location" => $request->location ?? $event->location,
@@ -158,10 +158,14 @@ class EventController extends Controller
         return new ApiResource(true, "Successfully updated event.", $event);
     }
 
-    public function destroy($id)
+    public function destroy($slug)
     {
-        $event = Event::findOrFail($id);
+        $event = Event::where('slug', $slug)->firstOrFail();
         $event->delete();
+
+        if ($event->cover_image) {
+            Storage::disk('cloudinary')->delete($event->cover_image);
+        }
 
         return new ApiResource(true, "Successfully deleted event.", $event);
     }

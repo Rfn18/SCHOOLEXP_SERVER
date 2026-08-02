@@ -30,7 +30,8 @@ class DocumentationRequest extends FormRequest
                         ? 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120'
                         : 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'alt_text' => 'required|string|max:5000',
-            'type' => 'required|in:' . implode(',', Documentation::TYPE),
+            'witdh' => 'nullable|integer|min:1',
+            'height' => 'nullable|integer|min:1',
             'gallery_id' => 'required|exists:doc_galleries,id',
             'soft_order' => 'required|integer'
         ];

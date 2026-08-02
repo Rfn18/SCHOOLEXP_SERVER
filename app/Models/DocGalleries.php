@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DocGalleries extends Model
 {
@@ -22,5 +23,10 @@ class DocGalleries extends Model
     public function docCategory():BelongsTo
     {
         return $this->belongsTo(DocCategories::class);
+    }
+
+    public function documentations(): HasMany
+    {
+        return $this->hasMany(Documentation::class, 'gallery_id');
     }
 }

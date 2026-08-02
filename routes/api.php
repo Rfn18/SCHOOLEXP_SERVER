@@ -27,6 +27,8 @@ Route::middleware('auth:api')->group(function () {
      Route::get('/doc-categories', [DocCategoryController::class, 'index']);
 });
 
+Route::get('/documentations/top-by-category', [DocumentationController::class, 'topByCategory']);
+
 Route::apiResource('doc-galleries', DocGalleries::class);
 Route::apiResource('event-category', EventCategoryController::class);
 Route::apiResource('events', EventController::class);
