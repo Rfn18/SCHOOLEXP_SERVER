@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\CloudinaryService;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Documentation extends Model
 {
@@ -24,6 +26,13 @@ class Documentation extends Model
         'width' => 'integer',
         'height' => 'integer',
     ];
+
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => app(CloudinaryService::class)->url($this->file_path)
+        );
+    }
 
     public function gallery()
     {

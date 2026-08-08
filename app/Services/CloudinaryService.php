@@ -24,29 +24,46 @@ class CloudinaryService
         $this->cloudinary = new Cloudinary();
     }
 
-    public function upload(UploadedFile $file, string $folder = 'documentations'): string
+    /**
+     * Upload file dan kembalikan PATH saja (bukan full URL).
+     * Contoh return: "documentation/phbn-2026/lws1eky5x74jdggrh0oa.jpg"
+     */
+    public function upload(UploadedFile $file, string $folder = 'documentation'): string
     {
         $result = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
             'folder' => $folder,
-            'resource_type' => 'auto'
+            'resource_type' => 'auto',
         ]);
-        
-        return $result['secure_url']; 
+
+        // public_id = "documentation/phbn-2026/lws1eky5x74jdggrh0oa"
+        // format    = "jpg"
+        return $result['public_id'] . '.' . $result['format'];
     }
 
-    public function delete(string $url): void
+    /**
+     * Delete berdasarkan PATH (bukan URL lagi).
+     */
+    public function delete(?string $path): void
     {
-        if (!$url || !str_contains($url, 'cloudinary')) return;
-        
+        if (!$path) return;
+
         try {
-            $path = parse_url($url, PHP_URL_PATH);
-            preg_match('/\/upload\/(?:v\d+\/)?(.+)\.\w+$/', $path, $matches);
-            
-            if (isset($matches[1])) {
-                $this->cloudinary->uploadApi()->destroy($matches[1]);
-            }
+            // Buang ekstensi untuk dapat public_id murni
+            $publicId = preg_replace('/\.\w+$/', '', $path);
+
+            $this->cloudinary->uploadApi()->destroy($publicId);
         } catch (\Exception $e) {
             \Log::warning('Gagal hapus file di Cloudinary: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Bangun full URL dari path tersimpan, dipakai saat display.
+     */
+    public function url(?string $path): ?string
+    {
+        if (!$path) return null;
+        $cloudName = config('cloudinary.cloud_name');
+        return "https://res.cloudinary.com/{$cloudName}/image/upload/{$path}";
     }
 }

@@ -33,4 +33,9 @@ Route::apiResource('doc-galleries', DocGalleries::class);
 Route::apiResource('event-category', EventCategoryController::class);
 Route::apiResource('events', EventController::class);
 Route::apiResource('doc-category', DocCategoryController::class);
+
+Route::post('/documentations/reorder', [DocumentationController::class, 'reorder']);
+Route::post('/documentations/bulk-create', [DocumentationController::class, 'bulkCreate']);
+Route::put('/documentations/bulk-update/{documentation}', [DocumentationController::class, 'bulkUpdate']);
+Route::delete('/documentations/bulk-delete/{documentation}', [DocumentationController::class, 'bulkDelete']);
 Route::apiResource('documentations', DocumentationController::class);

@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ApiResource;
+use Illuminate\Support\Str;
 use App\Models\Documentation;
 use App\Http\Requests\DocumentationRequest;
+use App\Models\DocGalleries;
 use App\Services\CloudinaryService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
+use App\Traits\ResolveEventFolder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Http\Request;
 
 class DocumentationController extends Controller
 {
+    use ResolveEventFolder;
     protected $cloudinaryService;
 
     public function __construct(CloudinaryService $cloudinaryService)
@@ -42,7 +46,9 @@ class DocumentationController extends Controller
         $file = $request->file('image');
         [$width, $height] = getimagesize($file->getRealPath());
 
-        $path = $this->cloudinaryService->upload($file);
+        $folder = $this->resolveEventFolder($request->gallery_id);
+
+        $path = $this->cloudinaryService->upload($file, $folder);
 
         $documentation = Documentation::create([
             'file_path' => $path,
@@ -75,15 +81,14 @@ class DocumentationController extends Controller
         $height = $documentation->height;
 
         if ($request->hasFile('image')) {
-            Storage::disk('cloudinary')->delete($documentation->file_path);
+            $this->cloudinaryService->delete($documentation->file_path);
 
             $file = $request->file('image');
             [$width, $height] = getimagesize($file->getRealPath());
 
-            $publicId = Storage::disk('cloudinary')->put(
-                'documentations',
-                $file
-            );
+            $folder = $this->resolveEventFolder($request->gallery_id ?? $documentation->gallery_id);
+
+            $publicId = $this->cloudinaryService->upload($file, $folder);
         }
 
         $documentation->update([
@@ -138,7 +143,7 @@ class DocumentationController extends Controller
         $documentations = Documentation::whereIn('id', $ids)->get();
 
         foreach ($documentations as $documentation) {
-            Storage::disk('cloudinary')->delete($documentation->file_path);
+            $this->cloudinaryService->delete($documentation->file_path);
             $documentation->delete();
         }
 
@@ -148,7 +153,7 @@ class DocumentationController extends Controller
         ]);
     }
 
-    public function bulkUpdate(DocumentationRequest $request): JsonResponse
+    public function bulkUpdate(Request $request): JsonResponse
     {
         $items = $request->validate([
             '*.id' => 'required|exists:documentations,id',
@@ -172,24 +177,28 @@ class DocumentationController extends Controller
         ]);
     }
 
-    public function bulkCreate(DocumentationRequest $request): JsonResponse
+    public function bulkCreate(Request $request): JsonResponse
     {
         $items = $request->validate([
             '*.alt_text' => 'required|string',
             '*.gallery_id' => 'required|exists:doc_galleries,id',
             '*.soft_order' => 'required|integer|min:0',
-            '*.image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            '*.image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5148',
         ]);
 
         $createdDocumentations = [];
 
+        $galleryIds = array_unique(array_column($items, 'gallery_id'));
+        $galleries = DocGalleries::with('event')->whereIn('id', $galleryIds)->get()->keyBy('id');
+
         foreach ($items as $item) {
             [$width, $height] = getimagesize($item['image']->getRealPath());
 
-            $path = Storage::disk('cloudinary')->put(
-                'documentations',
-                $item['image']
-            );
+            $gallery = $galleries->get($item['gallery_id']);
+            $eventSlug = $gallery?->event?->slug ?? 'unknown-event';
+            $folder = 'documentations/' . Str::slug($eventSlug);
+
+            $path = $this->cloudinaryService->upload($item['image'], $folder);
 
             $documentation = Documentation::create([
                 'file_path' => $path,
@@ -222,8 +231,6 @@ class DocumentationController extends Controller
             })
             ->orderBy('soft_order')
             ->get()
-            ->groupBy(fn($doc) => $doc->gallery->doc_category_id)
-            ->map(fn($group) => $group->first())
             ->values()
             ->map(fn($doc) => [
                 ...$doc->toArray(),
