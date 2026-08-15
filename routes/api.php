@@ -40,5 +40,6 @@ Route::post('/documentations/reorder', [DocumentationController::class, 'reorder
 Route::post('/documentations/bulk-create', [DocumentationController::class, 'bulkCreate']);
 Route::put('/documentations/bulk-update/{documentation}', [DocumentationController::class, 'bulkUpdate']);
 Route::delete('/documentations/bulk-delete/{documentation}', [DocumentationController::class, 'bulkDelete']);
+Route::get('/documentations/highlight', [DocumentationController::class, 'highlight']);
 Route::apiResource('documentations', DocumentationController::class);
 Route::post('/feedback', [FeedbackController::class, 'store']);

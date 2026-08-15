@@ -244,4 +244,36 @@ class DocumentationController extends Controller
             'data' => $documentation,
         ]);
     }
+
+   public function highlight(): JsonResponse
+    {
+        $query = Documentation::with('gallery')
+            ->when(request('gallery_id'), fn($q, $id) => $q->where('gallery_id', $id));
+
+        // 1. Coba ambil yang sudah di-set manual oleh admin
+        $documentation = (clone $query)
+            ->where('is_highlight', true)
+            ->orderBy('soft_order')
+            ->limit(2)
+            ->get();
+
+        // 2. Kalau admin belum set sama sekali, fallback ke "2 event terbaru"
+        if ($documentation->isEmpty()) {
+            $documentation = (clone $query)
+                ->orderByDesc('created_at')
+                ->limit(2)
+                ->get();
+        }
+
+        $documentation = $documentation->map(fn($doc) => [
+            ...$doc->toArray(),
+            'url' => $doc->image_url,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully retrieved highlighted documentation',
+            'data' => $documentation->values(),
+        ]);
+    }
 }

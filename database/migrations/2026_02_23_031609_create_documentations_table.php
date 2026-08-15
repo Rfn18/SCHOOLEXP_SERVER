@@ -21,6 +21,7 @@ return new class extends Migration
                 ->constrained('doc_galleries')
                 ->onDelete('cascade');
             $table->integer('soft_order')->default(0);
+            $table->boolean('is_highlight')->default(false);
             $table->timestamps();
         });
     }

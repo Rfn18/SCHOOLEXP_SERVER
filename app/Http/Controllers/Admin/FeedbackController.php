@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\api\Admin;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApiResource;
 use App\Models\Feedback;
-use Illuminate\Http\Request;
 
 class FeedbackController extends Controller
 {
