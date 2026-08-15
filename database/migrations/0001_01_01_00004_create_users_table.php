@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('refresh_token')->nullable();
             $table->rememberToken();
             $table->timestamp('token_invalidated_at')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
         });
 

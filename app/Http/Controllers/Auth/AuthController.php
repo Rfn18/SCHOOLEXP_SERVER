@@ -1,46 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Http\Resources\ApiResource;
 use App\Models\User;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
-class UserAuthController extends Controller
+class AuthController extends Controller
 {
-      public function register(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|confirmed|min:8',
-        'role_id' => 'required|exists:roles,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation failed',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'is_active' => $request->is_active ?? true,
-        'role_id' => $request->role_id,
-        'password' => Hash::make($request->password),
-    ]);
-
-    return response()->json([
-        'message' => 'User created successfully',
-        'user' => $user
-    ], 201);
-}
 
     public function login(Request $request) {
          $validator = Validator::make($request->all(), [
@@ -51,7 +23,7 @@ class UserAuthController extends Controller
         if($validator->fails()) {
             return response()->json($validator->errors(), 422);
         };
-
+        
         $credentials = $request->only('email', 'password');
 
         if(!$token = auth()->guard('api')->attempt($credentials)) {
@@ -62,6 +34,13 @@ class UserAuthController extends Controller
         }
 
         $user = auth()->guard('api')->user()->load('role');
+
+        if (!$user->hasVerifiedEmail()) {
+            Auth::guard('api')->logout();
+            return response()->json([
+                'message' => 'Email belum diverifikasi. Silakan cek email kamu.',
+            ], 403);
+        }
 
         return new ApiResource(true, 'Login Berhasil', [
             'user' => $user,
@@ -91,9 +70,10 @@ class UserAuthController extends Controller
     public function logout() {
         $removeToken = JWTAuth::invalidate(JWTAuth::getToken());
 
+        auth()->guard('api')->logout();
+
         if($removeToken) {
             return new ApiResource(true, 'Logout Berhasil', auth()->guard('api')->user());
         }
     }
-    
 }

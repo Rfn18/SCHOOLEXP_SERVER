@@ -5,20 +5,24 @@ use App\Http\Controllers\Api\DocGalleries;
 use App\Http\Controllers\Api\DocumentationController;
 use App\Http\Controllers\Api\EventCategoryController;
 use App\Http\Controllers\Api\EventController;
-use App\Http\Controllers\Api\UserAuthController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\UserManagementController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Auth\VerificationController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', [UserAuthController::class, 'register']);
-Route::post('/login', [UserAuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
 Route::apiResource('roles', RoleController::class);
 
+Route::get('/auth/email/verify/{id}/{hash}', [VerificationController::class, 'verify']);
+Route::post('/auth/email/resend', [VerificationController::class, 'resend'])
+    ->middleware('throttle:6,1');
+
 Route::middleware('auth:api')->group(function () {
-     Route::get('/me', [UserAuthController::class, 'me']);
-     Route::post('/refresh', [UserAuthController::class, 'refresh']);
-     Route::delete('/logout', [UserAuthController::class, 'logout']);
+     Route::get('/me', [AuthController::class, 'me']);
+     Route::post('/refresh', [AuthController::class, 'refresh']);
+     Route::delete('/logout', [AuthController::class, 'logout']);
      Route::apiResource('users', UserManagementController::class);
      
      Route::patch('/documentations/reorder', [DocumentationController::class, 'reorder']);
