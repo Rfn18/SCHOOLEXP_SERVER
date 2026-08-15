@@ -17,9 +17,18 @@ class EventController extends Controller
         protected CloudinaryService $cloudinaryService
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::with(['user', 'category'])->paginate(10);
+        $query = Event::query();
+
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        $events = $query
+                ->with('category')
+                ->latest('created_at')      
+                ->paginate(10);
 
         if ($events->count() === 0) {
             return new ApiResource(true, "List event masih kosong", $events);
@@ -105,7 +114,7 @@ class EventController extends Controller
             "title" => "sometimes|string|max:255",
             "description" => "sometimes|string",
             "location" => "sometimes|string|max:255",
-            "cover_image" => "sometimes|string",
+            "cover_image" => "sometimes|image|mimes:jpeg,png,jpg,gif|max:5128",
             "start_date" => "sometimes|date",
             "end_date" => "sometimes|date",
             "start_time" => "sometimes|date_format:H:i",

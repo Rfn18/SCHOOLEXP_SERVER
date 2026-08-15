@@ -70,7 +70,25 @@ class DocGalleries extends Controller
      */
     public function show(string $id)
     {
-        $doc_gallery = ModelsDocGalleries::with('docCategory')->find($id);
+        $doc_gallery = ModelsDocGalleries::with('docCategory', 'documentations')->find($id);
+
+        if (empty($doc_gallery)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data gallery tidak ditemukan.',
+            ], 404);
+        }
+
+        return new ApiResource(true, 'Data gallery berhasil diambil.', $doc_gallery);
+    }
+
+    public function showByEventSlug($slug)
+    {
+        $doc_gallery = ModelsDocGalleries::with('docCategory', 'documentations')
+            ->whereHas('event', function ($query) use ($slug) {
+                $query->where('slug', $slug);
+            })
+            ->get();
 
         if (empty($doc_gallery)) {
             return response()->json([

@@ -2,28 +2,52 @@
 
 namespace Database\Seeders;
 
+use App\Models\EventCategories;
+use App\Models\EventCategory;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class EventCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('event_categories')->insert([
+        $categories = [
             [
-                'id' => 1,
-                'name' => 'Acara Sekolah',
-                'description' => 'acara-sekolah',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'name' => 'Pendidikan',
+                'description' => 'Kegiatan yang berkaitan dengan pendidikan dan pembelajaran.',
             ],
             [
-                'id' => 2,
-                'name' => 'Olahraga',
-                'description' => 'olahraga',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'name' => 'Kegiatan Sekolah',
+                'description' => 'Kegiatan umum yang diselenggarakan oleh sekolah.',
             ],
-        ]);
+            [
+                'name' => 'Lomba',
+                'description' => 'Kompetisi dan perlombaan antar siswa.',
+            ],
+            [
+                'name' => 'Keagamaan',
+                'description' => 'Kegiatan keagamaan dan pembinaan spiritual.',
+            ],
+            [
+                'name' => 'Teknologi',
+                'description' => 'Kegiatan teknologi, komputer, programming, dan AI.',
+            ],
+            [
+                'name' => 'Seni',
+                'description' => 'Kegiatan seni dan kreativitas siswa.',
+            ],
+        ];
+
+        foreach ($categories as $category) {
+            EventCategories::updateOrCreate(
+                [
+                    'name' => $category['name'],
+                ],
+                [
+                    'description' => $category['description'],
+                ]
+            );
+        }
+
+        $this->command->info('Event categories berhasil di-seed.');
     }
 }

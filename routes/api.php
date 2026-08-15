@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\UserAuthController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserManagementController;
+use App\Http\Controllers\Api\FeedbackController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [UserAuthController::class, 'register']);
@@ -23,12 +24,13 @@ Route::middleware('auth:api')->group(function () {
      Route::patch('/documentations/reorder', [DocumentationController::class, 'reorder']);
      Route::patch('/users/change-profile-picture', [UserManagementController::class, 'changeProfilePicture']);
      Route::patch('/doc-galleries/reorder', [DocGalleries::class, 'reorder']);
-     Route::get('/event-categories', [EventCategoryController::class, 'index']);
      Route::get('/doc-categories', [DocCategoryController::class, 'index']);
 });
+Route::get('/event-categories', [EventCategoryController::class, 'index']);
 
 Route::get('/documentations/top-by-category', [DocumentationController::class, 'topByCategory']);
 
+Route::get('/doc-galleries/by-event/{slug}', [DocGalleries::class, 'showByEventSlug']);
 Route::apiResource('doc-galleries', DocGalleries::class);
 Route::apiResource('event-category', EventCategoryController::class);
 Route::apiResource('events', EventController::class);
@@ -39,3 +41,4 @@ Route::post('/documentations/bulk-create', [DocumentationController::class, 'bul
 Route::put('/documentations/bulk-update/{documentation}', [DocumentationController::class, 'bulkUpdate']);
 Route::delete('/documentations/bulk-delete/{documentation}', [DocumentationController::class, 'bulkDelete']);
 Route::apiResource('documentations', DocumentationController::class);
+Route::post('/feedback', [FeedbackController::class, 'store']);
