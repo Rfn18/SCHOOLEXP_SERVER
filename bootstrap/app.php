@@ -3,6 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureVerificationSessionValid as MiddlewareEnsureVerificationSessionValid;
+use App\Http\Middleware\MoveCookieTokenToHeader;
+use App\Http\Middleware\ValidateCsrfCookie;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,7 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'move.cookie.token' => MoveCookieTokenToHeader::class,
+            'verified.session' => MiddlewareEnsureVerificationSessionValid::class,
+            'csrf.cookie' => ValidateCsrfCookie::class,
+        ]);
+
+        $middleware->prependToGroup('api', MoveCookieTokenToHeader::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

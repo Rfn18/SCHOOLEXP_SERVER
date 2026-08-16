@@ -10,96 +10,21 @@ use Illuminate\Support\Facades\Validator;
 
 class EventCategoryController extends Controller
 {
-     public function index() {
-        $eventcategories = EventCategories::paginate(10);
-        if ($eventcategories->count() === 0) { 
-            return new ApiResource(true, "List masih kosong", $eventcategories);
+    public function index()
+    {
+        $eventCategories = EventCategories::paginate(10);
+
+        if ($eventCategories->count() === 0) {
+            return new ApiResource(true, 'List masih kosong', $eventCategories);
         }
 
-        return new ApiResource(true, "List data jenis", $eventcategories);
-    }
-    
-    public function store(Request $request) {
-        $validator = Validator::make($request->all(), [
-            "name" => "required|string",
-            "description" => "sometimes|string"
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422); 
-        }
-
-        if (is_numeric($request->name)) {
-           return response()->json([
-                'success' => false,
-                'message' => 'Nama jenis tidak boleh angka.',
-                'data' => null
-            ], 422);
-        }
-
-        if (EventCategories::where('name', $request->name)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Nama jenis tidak boleh sama.',
-                'data' => null
-            ], 422);
-        }
-        
-        $eventcategories = EventCategories::create([
-            "name" => $request->name,
-            "description" => $request->description
-        ]);
-
-        return new ApiResource(true, "Successfully created jenis", $eventcategories);
+        return new ApiResource(true, 'List data jenis', $eventCategories);
     }
 
-    public function show($id) {
-        $eventcategories = EventCategories::findOrFail($id);
-        return new ApiResource(true, "List data menu bedasaran id.", $eventcategories);
-    }
+    public function show($id)
+    {
+        $eventCategory = EventCategories::findOrFail($id);
 
-    public function update(Request $request, $id) { 
-        $validator = Validator::make($request->all(), [
-            "name" => "sometimes|string",
-            "description" => "nullable|string"
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-        
-        if ($request->name && EventCategories::where('name', $request->name)->where('id', '!=', $id)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Nama jenis tidak boleh sama.',
-                'data' => null
-            ], 422);
-        }
-
-        if (is_numeric($request->name)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Nama jenis tidak boleh angka.',
-                'data' => null
-            ], 422);
-        }
-        
-        $eventcategories = EventCategories::findOrFail($id);
-    
-        $eventcategories->update([
-            "id" => $eventcategories->id,
-            "name" => $request->name,
-            "description" => $request->description
-        ]);
-
-     return new ApiResource(true, "Successfully updated data.", $eventcategories);
-    }
-
-    public function destroy($id) {
-        $eventcategories = EventCategories::findOrFail($id);
-        
-        $eventcategories->delete();
-
-        return new ApiResource(true, "Successfully deleted data.", $eventcategories);
+        return new ApiResource(true, 'List data menu berdasarkan id.', $eventCategory);
     }
 }

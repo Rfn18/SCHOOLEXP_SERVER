@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class VerificationController extends Controller
 {
+    protected int $verificationSessionDays = 1;
+
     public function verify(Request $request, $id, $hash)
     {
         $expires = $request->query('expires');
@@ -19,7 +22,6 @@ class VerificationController extends Controller
             return response()->json(['message' => 'User tidak ditemukan'], 404);
         }
 
-        // Validasi signature
         $expectedSignature = hash_hmac(
             'sha256',
             "verification.verify|{$id}|{$hash}|{$expires}",
@@ -38,11 +40,16 @@ class VerificationController extends Controller
             return response()->json(['message' => 'Link verifikasi tidak valid'], 403);
         }
 
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email sudah terverifikasi sebelumnya']);
+        // First-time verification -> catat permanen
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
         }
 
-        $user->markEmailAsVerified();
+        // Baik first-time maupun reverify (habis logout / idle 1 hari),
+        // extend rolling session di sini.
+        $user->update([
+            'verification_expires_at' => now()->addDays($this->verificationSessionDays),
+        ]);
 
         return response()->json(['message' => 'Email berhasil diverifikasi']);
     }
@@ -51,12 +58,17 @@ class VerificationController extends Controller
     {
         $request->validate(['email' => 'required|email|exists:users,email']);
 
-        $user = User::where('email', $request->email)->first();
+        $key = 'verify-resend:' . $request->email;
 
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email sudah terverifikasi']);
+        if (RateLimiter::tooManyAttempts($key, 1)) {
+            return response()->json([
+                'message' => 'Tunggu sebentar sebelum minta kirim ulang lagi'
+            ], 429);
         }
 
+        $user = User::where('email', $request->email)->first();
+
+        RateLimiter::hit($key, 60);
         $user->sendEmailVerificationNotification();
 
         return response()->json(['message' => 'Email verifikasi telah dikirim ulang']);

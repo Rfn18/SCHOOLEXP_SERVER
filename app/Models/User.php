@@ -29,7 +29,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'role_id',
         'profile_picture',
         'is_active',
-        'refresh_token'
+        'refresh_token',
+        'verification_expires_at',
     ];
     
 
@@ -62,6 +63,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'verification_expires_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -69,6 +71,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function hasValidVerificationSession(): bool
+    {
+        return $this->hasVerifiedEmail()
+            && $this->verification_expires_at
+            && now()->lessThan($this->verification_expires_at);
     }
 
      /**
